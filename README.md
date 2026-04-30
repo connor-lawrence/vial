@@ -10,7 +10,3 @@ When I was originally creating my OS project, it's name was `TLOS` (Tiny Little 
 
 ## Some small details:
 * I would normally add a longer description to these READMEs... But since this project is in a very early stage and changes quickly, I'll leave it vague for now!
-
-* I overhauled my naming scheme recently, so ISOs/legacy_names and legacy/legacy_names contain copies of mostly everything with the pre-overhaul names (I say "mostly" because I'm an unorganized teenager and that's what y'all have to deal with...)
-
-    * Current Naming Scheme: VialOS`Era`v`Version`.`Increment` (i.e. `VialOS1v2.3`, or `VialOS1v2-3` for files)
