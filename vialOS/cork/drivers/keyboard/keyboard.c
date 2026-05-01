@@ -1,9 +1,11 @@
 #include "keyboard.h"
+#include "types.h"
+
 /*
-static uint8_t last_key = 0;
+static u8 last_key = 0;
 
 void keyboard_poll() {
-    uint8_t scancode = inb(0x60);
+    u8 scancode = inb(0x60);
     if (scancode == last_key) return;
     last_key = scancode;
     if (scancode & 0x80) {

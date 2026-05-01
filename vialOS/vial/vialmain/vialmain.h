@@ -1,6 +1,7 @@
-#ifndef VIAL_H
-#define VIAL_H
+#ifndef VIALMAIN_H
+#define VIALMAIN_H
 
+/*
 typedef enum {
     OS_MODE_INIT,
     OS_MODE_VSH,
@@ -8,6 +9,7 @@ typedef enum {
 } OSMode;
 
 extern OSMode os_mode;
+*/
 
 void os_init();
 void os_main_loop();

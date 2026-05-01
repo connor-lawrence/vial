@@ -1,4 +1,6 @@
-#include "cork.h"
+#include "corkmain.h"
+#include "types.h"
+#include "../../vial/vialmain/vialmain.h"
 
 void kernel_init() {
     os_init();

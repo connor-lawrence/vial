@@ -2,7 +2,7 @@
 #define VGA_H
 
 typedef enum {
-    VGA_BLACK = 0,
+    VGA_BLACK,
     VGA_BLUE,
     VGA_GREEN,
     VGA_CYAN,

@@ -1,4 +1,6 @@
 #include "typing.h"
+#include "types.h"
+
 /*
 InputMode typing_mode = TYPING_MODE_STANDBY;
 
