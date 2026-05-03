@@ -1,7 +1,7 @@
 #include "io.h"
 #include "types.h"
 
-unsigned char inb(u16 port) {
+u8 i386_inb(u16 port) {
     unsigned char result;
 
     asm volatile (
@@ -13,7 +13,7 @@ unsigned char inb(u16 port) {
     return result;
 }
 
-void outb(u16 port, u8 value) {
+void i386_outb(u16 port, u8 value) {
     asm volatile (
         "outb %0, %1"
         :

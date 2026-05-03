@@ -4,25 +4,28 @@ all:
 
 	nasm -f elf32 boot.s -o build/boot.o
 
-	gcc -Icork/include -m32 -ffreestanding -c cork/arch/i386/interrupts/interrupts.c -o build/interrupts.o
-	gcc -Icork/include -m32 -ffreestanding -c cork/arch/i386/io/io.c -o build/io.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c cork/apis/apis.c -o build/apis.o
 
-	gcc -Icork/include -m32 -ffreestanding -c cork/corkmain/corkmain.c -o build/corkmain.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c cork/arch/i386/interrupts/interrupts.c -o build/interrupts.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c cork/arch/i386/io/io.c -o build/io.o
 
-	gcc -Icork/include -m32 -ffreestanding -c cork/drivers/keyboard/keyboard.c -o build/keyboard.o
-	gcc -Icork/include -m32 -ffreestanding -c cork/drivers/vga/vga.c -o build/vga.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c cork/corkmain/corkmain.c -o build/corkmain.o
 
-	gcc -Icork/include -m32 -ffreestanding -c vial/libraries/graphics/graphics.c -o build/graphics.o
-	gcc -Icork/include -m32 -ffreestanding -c vial/libraries/typing/typing.c -o build/typing.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c cork/drivers/keyboard/keyboard.c -o build/keyboard.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c cork/drivers/vga/vga.c -o build/vga.o
 
-	gcc -Icork/include -m32 -ffreestanding -c vial/vialmain/vialmain.c -o build/vialmain.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c vial/engines/graphics/graphics.c -o build/graphics.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c vial/engines/typing/typing.c -o build/typing.o
 
-	gcc -Icork/include -m32 -ffreestanding -c vial/vsh/commands/commands.c -o build/commands.o
-	gcc -Icork/include -m32 -ffreestanding -c vial/vsh/vshmain/vshmain.c -o build/vshmain.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c vial/vialmain/vialmain.c -o build/vialmain.o
+
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c vial/vsh/commands/commands.c -o build/commands.o
+	gcc -Icork/include -Icork/apis -m32 -ffreestanding -c vial/vsh/vshmain/vshmain.c -o build/vshmain.o
 
 
 	ld -m elf_i386 -T memory.ld -o build/vialos.bin \
 		build/boot.o \
+		build/apis.o \
 		build/interrupts.o \
 		build/io.o \
 		build/corkmain.o \
@@ -42,27 +45,29 @@ all:
 clean:
 	rm -rf build
 
-# TO-DO
+
+
+# TO-DO |
 #		.
 #		├── cork
 #		│   ├── arch
 #		│   │   ├── i386
-#	X	│   │   │   ├── interrupts
+#	/	│   │   │   ├── interrupts
 #	O	│   │   │   └── io
 #		│   │   └── x86-64
-#	-	│   ├── corkmain
+#	.	│   ├── corkmain
 #		│   ├── drivers
-#	X	│   │   ├── keyboard
-#	X	│   │   └── vga
+#	-	│   │   ├── keyboard
+#	O	│   │   └── vga
 #	O	│   └── include
 #		├── iso
 #		│   └── boot
-#		│       └── grub
+#	O	│       └── grub
 #		└── vial
-#		    ├── libraries
-#	X	    │   ├── graphics
-#	X	    │   └── typing
-#	X	    ├── vialmain
+#		    ├── engines
+#	O	    │   ├── graphics
+#	-	    │   └── typing
+#	-	    ├── vialmain
 #		    └── vsh
-#	X	        ├── commands
-#	X	        └── vshmain
+#	/	        ├── commands
+#	/	        └── vshmain

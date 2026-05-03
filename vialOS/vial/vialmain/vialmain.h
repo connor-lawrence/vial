@@ -1,6 +1,8 @@
 #ifndef VIALMAIN_H
 #define VIALMAIN_H
 
+#include "types.h"
+
 /*
 typedef enum {
     OS_MODE_INIT,
@@ -13,5 +15,6 @@ extern OSMode os_mode;
 
 void os_init();
 void os_main_loop();
+void print_banner();
 
 #endif

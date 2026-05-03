@@ -1,23 +1,11 @@
 #ifndef VGA_H
 #define VGA_H
 
-typedef enum {
-    VGA_BLACK,
-    VGA_BLUE,
-    VGA_GREEN,
-    VGA_CYAN,
-    VGA_RED,
-    VGA_MAGENTA,
-    VGA_BROWN,
-    VGA_LIGHT_GRAY,
-    VGA_DARK_GRAY,
-    VGA_LIGHT_BLUE,
-    VGA_LIGHT_GREEN,
-    VGA_LIGHT_CYAN,
-    VGA_LIGHT_RED,
-    VGA_LIGHT_MAGENTA,
-    VGA_YELLOW,
-    VGA_WHITE
-} vga_color;
+#include "types.h"
+
+void vga_print_char(char character, u16 color, int x, int y);
+void vga_write_char(char character, u16 color, int x, int y);
+void vga_render();
+void kernel_print_string(const char* str, u16 color, int x, int y);
 
 #endif

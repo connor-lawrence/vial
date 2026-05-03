@@ -27,4 +27,25 @@ typedef u8 byte;
 typedef u16 word;
 typedef u32 dword;
 
+// TEMPORARY!!!
+
+typedef enum {
+    VGA_BLACK = 0x00,
+    VGA_BLUE = 0x01,
+    VGA_GREEN = 0x02,
+    VGA_CYAN = 0x03,
+    VGA_RED = 0x04,
+    VGA_MAGENTA = 0x05,
+    VGA_BROWN = 0x06,
+    VGA_LIGHT_GRAY = 0x07,
+    VGA_DARK_GRAY = 0x08,
+    VGA_LIGHT_BLUE = 0x09,
+    VGA_LIGHT_GREEN = 0x0A,
+    VGA_LIGHT_CYAN = 0x0B,
+    VGA_LIGHT_RED = 0x0C,
+    VGA_LIGHT_MAGENTA = 0x0D,
+    VGA_YELLOW = 0x0E,
+    VGA_WHITE = 0x0F
+} vga_color;
+
 #endif
