@@ -29,8 +29,20 @@ void kernel_main(BootInfo *boot_info) {
 
     core_init(boot_info);
 
-    // Allocate a page
-    serial_print_hex("Allocated page @ ", (u64)physical_allocate_page(), "\n");
+    serial_print("\n   Allocation test:\n\n");
+
+    void* prev = NULL;
+
+    for (u32 i = 0; i < 249600; i++) {
+        void* curr = physical_allocate_page();
+
+        if (prev == NULL || (u64)curr != (u64)prev + 0x1000) {
+            serial_print_hex("Now at ", (u64)curr, " after allocation ");
+            serial_print_int("# ", i, "\n");
+        }
+
+        prev = curr;
+    }
 
     // Halt
     while (1) {

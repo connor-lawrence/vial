@@ -18,10 +18,13 @@ BOOT_SRC_DIR := bootloader
 BOOT_C_SOURCE := $(shell find $(BOOT_SRC_DIR) -name "*.c")
 BOOT_CRT := /usr/lib/crt0-efi-x86_64.o
 
+INCLUDE_DIRS := $(shell find . -type d -name include)
+INCLUDES := $(addprefix -I,$(INCLUDE_DIRS))
+
 # Flags
-KERNEL_C_FLAGS := -std=c2x -ffreestanding -fno-pie -fno-stack-protector -m64 -mno-red-zone -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wmissing-prototypes -I include
+KERNEL_C_FLAGS := -std=c2x -ffreestanding -fno-pie -fno-stack-protector -m64 -mno-red-zone -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wmissing-prototypes $(INCLUDES)
 KERNEL_S_FLAGS := -std=c2x -m64
-BOOT_C_FLAGS := -fno-pie -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -DEFI_FUNCTION_WRAPPER -I /usr/include/efi -I /usr/include/efi/x86_64 -I include
+BOOT_C_FLAGS := -fno-pie -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -DEFI_FUNCTION_WRAPPER -I /usr/include/efi -I /usr/include/efi/x86_64 $(INCLUDES)
 BOOT_LD_FLAGS := -nostdlib -shared -Bsymbolic -lgnuefi -lefi -L /usr/lib -T /usr/lib/elf_x86_64_efi.lds
 BOOT_OBJCOPY_FLAGS := -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64
 

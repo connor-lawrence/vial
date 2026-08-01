@@ -17,4 +17,5 @@ typedef struct {
 } MemoryRegion;
 
 void memory_init(Memory *memory);
+void physical_reserve_region(u64 base, u64 size);
 void* physical_allocate_page(void);

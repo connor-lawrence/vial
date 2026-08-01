@@ -24,6 +24,19 @@ void memory_init(Memory *memory) {
 
     parse_memory_map(memory);
 
+    serial_print("Physically reserving kernel (if needed)...\n");
+    u64 pages = (memory->kernel_size + PAGE_SIZE - 1) / PAGE_SIZE;
+    physical_reserve_region(memory->kernel_base, pages * PAGE_SIZE);
+
+    serial_print_int("\n   Final memory regions: ", region_count, "\n\n");
+
+    for (u64 i = 0; i < region_count; i++) {
+        MemoryRegion *region = &memory_regions[i];
+        serial_print_int("Memory region ", i + 1, " ");
+        serial_print_hex("@ ", region->base, " ");
+        serial_print_int("- ", region->size / PAGE_SIZE, " pages\n");
+    }
+
 }
 
 static void parse_memory_map(Memory *memory) {
@@ -32,7 +45,7 @@ static void parse_memory_map(Memory *memory) {
     u64 region_base = 0;
     u64 usable_pages = 0;
 
-    serial_print("   Memory:\n\n");
+    serial_print("   Conventional memory regions from EFI:\n\n");
 
     while (region_base < memory->map_size && region_count < MAX_REGIONS) {
 
@@ -47,14 +60,7 @@ static void parse_memory_map(Memory *memory) {
 
             serial_print_int("Memory region ", region_count, " ");
             serial_print_hex("@ ", descriptor->physical_start, " - ");
-            serial_print_int("", descriptor->number_of_pages, " pages, ");
-
-            u64 kib = descriptor->number_of_pages * 4;
-
-            if (kib >= 1024)
-                serial_print_int("", kib / 1024, " MiB (Large)\n");
-            else
-                serial_print_int("", kib, " KiB\n");
+            serial_print_int("", descriptor->number_of_pages, " pages\n");
 
             usable_pages += descriptor->number_of_pages;
 
@@ -69,7 +75,58 @@ static void parse_memory_map(Memory *memory) {
 
 }
 
-void* physical_allocate_page(void) {
+void physical_reserve_region(u64 base, u64 size) {
+
+    u64 reserved_region_end = base + size;
+
+    serial_print_hex("Reserving region @ ", base, "");
+    serial_print_int(", ", size / PAGE_SIZE, " pages\n");
+
+    for (u64 i = 0; i < region_count; i++) {
+
+        MemoryRegion *region = &memory_regions[i];
+
+        u64 region_end = region->base + region->size;
+
+        if (reserved_region_end <= region->base || base >= region_end) {
+
+            continue;
+
+        } else if (base <= region->base && reserved_region_end >= region_end) {
+
+            memory_regions[i] = memory_regions[region_count - 1];
+            region_count--;
+            i--;
+
+        } else if (base <= region->base && reserved_region_end < region_end) {
+
+            region->base = reserved_region_end;
+            region->size = region_end - reserved_region_end;
+
+        } else if (base > region->base && reserved_region_end >= region_end) {
+
+            region->size = base - region->base;
+
+        } else if (base > region->base && reserved_region_end < region_end) {
+
+            if (region_count >= MAX_REGIONS) {
+                continue;
+            }
+
+            region->size = base - region->base;
+
+            MemoryRegion *new_region = &memory_regions[region_count++];
+
+            new_region->base = reserved_region_end;
+            new_region->size = region_end - reserved_region_end;
+
+        }
+
+    }
+
+}
+
+void* physical_allocate_page() {
 
     if (current_region >= region_count) {
         return NULL;
