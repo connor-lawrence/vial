@@ -2,13 +2,13 @@
 #include "types.h"
 
 typedef struct {
-    u64 kernel_base;
-    u64 kernel_size;
     void *map;
     u64 map_size;
     u64 map_descriptor_size;
     u32 map_descriptor_version;
     u64 map_key;
+    u64 kernel_base;
+    u64 kernel_size;
 } Memory;
 
 typedef struct {

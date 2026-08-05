@@ -1,150 +1,100 @@
 #include "physical.h"
 #include "types.h"
-#include "boot.h"
+#include "uefi_map.h"
+#include "print.h"
+#include "panic.h"
 
-#include "serial.h"
+static void set_page(u64 page, bool value);
 
-#define PAGE_SIZE 4096
-#define MAX_REGIONS 128
-#define EFI_CONVENTIONAL_MEMORY 7
+static PhysicalMemoryState *physical_memory_state = NULL;
 
-static MemoryRegion memory_regions[MAX_REGIONS];
-static u64 region_count = 0;
+void physical_memory_init(const UsableMemoryMap *memory_map) {
 
-// For bump allocator
-static u64 current_region = 0;
-static u64 current_offset = 0;
+    u64 total_pages = 0;
+    u64 memory_region = 0;
 
-static void parse_memory_map(Memory *memory);
-
-void memory_init(Memory *memory) {
-
-    current_region = 0;
-    current_offset = 0;
-
-    parse_memory_map(memory);
-
-    serial_print("Physically reserving kernel (if needed)...\n");
-    u64 pages = (memory->kernel_size + PAGE_SIZE - 1) / PAGE_SIZE;
-    physical_reserve_region(memory->kernel_base, pages * PAGE_SIZE);
-
-    serial_print_int("\n   Final memory regions: ", region_count, "\n\n");
-
-    for (u64 i = 0; i < region_count; i++) {
-        MemoryRegion *region = &memory_regions[i];
-        serial_print_int("Memory region ", i + 1, " ");
-        serial_print_hex("@ ", region->base, " ");
-        serial_print_int("- ", region->size / PAGE_SIZE, " pages\n");
+    // Find the total number of pages to go into the bitmap
+    for (u64 i = 0; i < memory_map->region_count; i++) {
+        total_pages += memory_map->regions[i].size / PAGE_SIZE;
     }
 
-}
+    u64 bitmap_size = (total_pages + 7) / 8;
 
-static void parse_memory_map(Memory *memory) {
-
-    region_count = 0;
-    u64 region_base = 0;
-    u64 usable_pages = 0;
-
-    serial_print("   Conventional memory regions from EFI:\n\n");
-
-    while (region_base < memory->map_size && region_count < MAX_REGIONS) {
-
-        MemoryMapDescriptor *descriptor = (MemoryMapDescriptor *)((u8 *)memory->map + region_base);
-
-        if (descriptor->type == EFI_CONVENTIONAL_MEMORY) {
-
-            memory_regions[region_count].base = descriptor->physical_start;
-            memory_regions[region_count].size = descriptor->number_of_pages * PAGE_SIZE;
-
-            region_count++;
-
-            serial_print_int("Memory region ", region_count, " ");
-            serial_print_hex("@ ", descriptor->physical_start, " - ");
-            serial_print_int("", descriptor->number_of_pages, " pages\n");
-
-            usable_pages += descriptor->number_of_pages;
-
+    // Find the first available space for physical memory state and regions and place it there
+    for (u64 i = 0; i < memory_map->region_count; i++) {
+        if (memory_map->regions[i].size >= sizeof(PhysicalMemoryState) + (sizeof(MemoryRegion) * memory_map->region_count) + bitmap_size) {
+            physical_memory_state = (PhysicalMemoryState *)memory_map->regions[i].base;
+            memory_region = i;
+            break;   
         }
-
-        region_base += memory->map_descriptor_size;
-
+    }
+    if (physical_memory_state == NULL) {
+        panic("[Physical Memory Init] Not enough space for physical memory state");
     }
 
-    serial_print_int("\nTotal usable memory: ", usable_pages, " pages, ");
-    serial_print_int("", usable_pages / 256, " MiB\n\n");
+    physical_memory_state->page_count = total_pages;
+    physical_memory_state->memory_map.region_count = memory_map->region_count;
+
+    // Place the memory map regions after the physical memory state
+    MemoryRegion *memory_regions = (MemoryRegion *)((u8 *)physical_memory_state + sizeof(PhysicalMemoryState));
+    physical_memory_state->memory_map.regions = memory_regions;
+
+    // Copy the memory map regions into their permanent place
+    for (u64 i = 0; i < physical_memory_state->memory_map.region_count; i++) {
+        physical_memory_state->memory_map.regions[i].base = memory_map->regions[i].base;
+        physical_memory_state->memory_map.regions[i].size = memory_map->regions[i].size;
+    }
+
+    // Place the bitmap after the physical memory state and map regions
+    u8 *bitmap = (u8 *)((u8 *)physical_memory_state + sizeof(PhysicalMemoryState) + (sizeof(MemoryRegion) * physical_memory_state->memory_map.region_count));
+    physical_memory_state->bitmap = bitmap;
+    physical_memory_state->bitmap_size = bitmap_size;
+
+    // Mark all memory as free (REPLACE WITH MEMSET LATER!)
+    for (u64 i = 0; i < bitmap_size; i++) {
+        bitmap[i] = 0;
+    }
+
+    // Mark physical memory state, map regions, and bitmap as used
+    u64 pages_before_region_start = 0;
+    for (u64 i = 0; i < memory_region; i++) {
+        pages_before_region_start += physical_memory_state->memory_map.regions[i].size / PAGE_SIZE;
+    }
+    u64 reserve_size = ((sizeof(PhysicalMemoryState) + (sizeof(MemoryRegion) * physical_memory_state->memory_map.region_count) + bitmap_size) + PAGE_SIZE - 1) / PAGE_SIZE;
+    for (u64 i = 0; i < reserve_size; i++) {
+        set_page(pages_before_region_start + i, true);
+    }
 
 }
 
-void physical_reserve_region(u64 base, u64 size) {
+u64 physical_allocate_page(void) {
+    for (u64 i = 0; i < physical_memory_state->page_count; i++) {
+        u64 byte_index = i / 8;
+        u64 bit_index = i % 8;
+        if (!(physical_memory_state->bitmap[byte_index] & (1 << bit_index))) {
+            set_page(i, true);
 
-    u64 reserved_region_end = base + size;
-
-    serial_print_hex("Reserving region @ ", base, "");
-    serial_print_int(", ", size / PAGE_SIZE, " pages\n");
-
-    for (u64 i = 0; i < region_count; i++) {
-
-        MemoryRegion *region = &memory_regions[i];
-
-        u64 region_end = region->base + region->size;
-
-        if (reserved_region_end <= region->base || base >= region_end) {
-
-            continue;
-
-        } else if (base <= region->base && reserved_region_end >= region_end) {
-
-            memory_regions[i] = memory_regions[region_count - 1];
-            region_count--;
-            i--;
-
-        } else if (base <= region->base && reserved_region_end < region_end) {
-
-            region->base = reserved_region_end;
-            region->size = region_end - reserved_region_end;
-
-        } else if (base > region->base && reserved_region_end >= region_end) {
-
-            region->size = base - region->base;
-
-        } else if (base > region->base && reserved_region_end < region_end) {
-
-            if (region_count >= MAX_REGIONS) {
-                continue;
+            // Convert bitmap page to address
+            u64 remaining_pages = i;
+            for (u64 j = 0; j < physical_memory_state->memory_map.region_count; j++) {
+                if (remaining_pages < physical_memory_state->memory_map.regions[j].size / PAGE_SIZE) {
+                    return physical_memory_state->memory_map.regions[j].base + (remaining_pages * PAGE_SIZE);
+                } else {
+                    remaining_pages -= physical_memory_state->memory_map.regions[j].size / PAGE_SIZE;
+                }
             }
 
-            region->size = base - region->base;
-
-            MemoryRegion *new_region = &memory_regions[region_count++];
-
-            new_region->base = reserved_region_end;
-            new_region->size = region_end - reserved_region_end;
-
         }
-
     }
-
+    panic("[Physical Page Allocator] Not enough memory to allocate page");
 }
 
-void* physical_allocate_page() {
-
-    if (current_region >= region_count) {
-        return NULL;
+static void set_page(u64 page, bool value) {
+    u64 byte_index = page / 8;
+    u64 bit_index = page % 8;
+    if (value) {
+        physical_memory_state->bitmap[byte_index] |= (1 << bit_index);
+    } else {
+        physical_memory_state->bitmap[byte_index] &= (u8)~(1 << bit_index);
     }
-    
-    if (current_offset + PAGE_SIZE > memory_regions[current_region].size) {
-        current_offset = 0;
-        current_region++;
-    }
-
-    if (current_region >= region_count) {
-        return NULL;
-    }
-
-    u64 address = memory_regions[current_region].base + current_offset;
-
-    current_offset += PAGE_SIZE;
-
-    return (void*)address;
-
 }

@@ -3,19 +3,21 @@
 #include "boot.h"
 
 typedef struct {
-    u32 type;
-    u32 pad;
-    u64 physical_start;
-    u64 virtual_start;
-    u64 number_of_pages;
-    u64 attribute;
-} MemoryMapDescriptor;
-
-typedef struct {
     u64 base;
     u64 size;
 } MemoryRegion;
 
-void memory_init(Memory *memory);
-void physical_reserve_region(u64 base, u64 size);
-void* physical_allocate_page(void);
+typedef struct {
+    MemoryRegion *regions;
+    u64 region_count;
+} UsableMemoryMap;
+
+typedef struct {
+    u8 *bitmap;
+    u64 bitmap_size;
+    u64 page_count;
+    UsableMemoryMap memory_map;
+} PhysicalMemoryState;
+
+void physical_memory_init(const UsableMemoryMap *map);
+u64 physical_allocate_page(void);

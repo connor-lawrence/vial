@@ -70,7 +70,7 @@ QEMU_OVMF_CODE := /usr/share/OVMF/OVMF_CODE_4M.fd
 QEMU_VARS := $(BUILD_DIR)/OVMF_VARS.fd
 QEMU_FLAGS := -drive if=pflash,format=raw,readonly=on,file=$(QEMU_OVMF_CODE) \
 	-drive if=pflash,format=raw,file=$(QEMU_VARS) \
-	-drive format=raw,file=fat:rw:$(BUILD_DIR) -m 1G
+	-drive format=raw,file=fat:rw:$(BUILD_DIR) -m 256M
 
 $(QEMU_VARS):
 	mkdir -p $(dir $@)

@@ -1,5 +1,5 @@
 .global _start
-.extern kernel_main
+.extern kernel_init
 
 .section .text
 _start:
@@ -15,7 +15,7 @@ _start:
     # Mark bottom of initial stack frame
     xorq %rbp, %rbp
 
-    call kernel_main
+    call kernel_init
 
 .hang:
     hlt

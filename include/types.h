@@ -13,6 +13,19 @@ typedef signed long long i64;
 typedef u64 usize;
 typedef i64 isize;
 
+#ifndef bool
+typedef _Bool bool_t; 
+#define bool bool_t
+#endif
+
+#ifndef true
+#define true 1
+#endif
+
+#ifndef false
+#define false 0
+#endif
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
