@@ -1,4 +1,4 @@
-.PHONY: all clean run run-c
+.PHONY: all clean run run-headless
 
 # Directories
 BUILD_DIR := build
@@ -79,5 +79,5 @@ $(QEMU_VARS):
 run: $(QEMU_VARS)
 	qemu-system-x86_64 $(QEMU_FLAGS) -debugcon stdio
 
-run-c: $(QEMU_VARS)
+run-headless: $(QEMU_VARS)
 	qemu-system-x86_64 $(QEMU_FLAGS) -display none -debugcon stdio

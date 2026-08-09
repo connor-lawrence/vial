@@ -78,7 +78,7 @@ In Docker, run these commands:
         docker build -t iris-i .
         ```
 
-    * If you are running Docker on an ARM machine (including a Mac):
+    * If you are running Docker on an ARM machine (like a Mac):
 
         ```
         docker build --platform linux/amd64 -t iris-i .
@@ -100,14 +100,19 @@ In Docker, run these commands:
 
 * Now, choose your own adventure!
 
-    * If you have QEMU installed on the host computer (`qemu-system-x86`), on the host run: 
+    * If you have QEMU installed on the host computer (`qemu-system-x86`) and would like to use graphics, on the host run: 
 
         ```
         make run
         ```
 
-    * If not, no worries! Inside of the container, you can use:
+    * If you don't have QEMU installed on the host, no worries! you can install QEMU with:
 
         ```
-        make run-c
+        apt update && apt install -y qemu-system-x86
+        ```
+
+    * And to run Iris using headless:
+        ```
+        make run-headless
         ```
